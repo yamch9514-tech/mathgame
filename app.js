@@ -1068,15 +1068,26 @@ const MathEngine = {
 
   // Format and package math questions cleanly
   assembleQuestion(instruction, expr, correctVal, wrongVals, isString = false) {
-    // Standardize representation of fractional equations for mobile view
-    let displayExpr = expr.replace(/\\frac\{x\}\{([0-9]+)\}/g, "x / $1");
+    const cleanMath = (s) => {
+      let str = String(s);
+      // Remove " + 0" or " - 0"
+      str = str.replace(/\s*\+\s*0\b/g, '');
+      str = str.replace(/\s*-\s*0\b/g, '');
+      // Remove "0 +" or "0 -" at the start or after '='
+      str = str.replace(/(^|=[^\w]*)\s*0\s*\+\s*/g, '$1');
+      str = str.replace(/(^|=[^\w]*)\s*0\s*-\s*/g, '$1-');
+      return str.trim() === '' || str.trim() === '=' || str.trim() === '-' ? '0' : str;
+    };
 
-    const correctStr = String(correctVal);
+    // Standardize representation of fractional equations for mobile view
+    let displayExpr = cleanMath(expr).replace(/\\frac\{x\}\{([0-9]+)\}/g, "x / $1");
+
+    const correctStr = cleanMath(correctVal);
     const optionsSet = new Set([correctStr]);
 
     // Fill wrong answers and make sure they are unique
     wrongVals.forEach(val => {
-      const s = String(val);
+      const s = cleanMath(val);
       if (s !== correctStr && s !== "NaN" && s !== "") {
         optionsSet.add(s);
       }
